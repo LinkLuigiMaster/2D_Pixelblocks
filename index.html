@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixelblocks</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-image: url(''); /* Hier kannst du den Pfad zu deinem Bildordner einfügen */
+    }
+    canvas {
+      display: block;
+    }
+    #gameTitle {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 30px;
+      color: white;
+      /* text-shadow: 0.1vw 0.1vw white; */
+      background-color: blue;
+    }
+    #roundCounter {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 18px;
+      color: white;
+      /* text-shadow: 0.1vw 0.1vw white; */
+      background-color: blue;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameTitle">Pixelblocks</div>
+  <div id="roundCounter">Round: 0 | Score: 0</div>
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const blockSize = 30;
+    const playerSize = 20;
+    const obstacleSize = 50;
+    let numObstacles = 10;
+    const targetSize = 20;
+
+    let playerX = 50;
+    let playerY = 50;
+    let targetX = 0;
+    let targetY = 0;
+    let obstacles = [];
+    let roundCounter = 0;
+    let score = 0;
+    let movingDirection = { x: 0, y: 0 };
+    let deathCounter = 0;
+
+    function init() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      generateObstacles();
+      generateTarget();
+      updateBackground();
+
+      document.addEventListener('keydown', handleKeyPress);
+
+      update();
+    }
+
+    function generateObstacles() {
+      obstacles = [];
+
+      for (let i = 0; i < numObstacles; i++) {
+        const obstacle = {
+          x: Math.random() * (canvas.width - obstacleSize),
+          y: Math.random() * (canvas.height - obstacleSize),
+          width: obstacleSize,
+          height: obstacleSize
+        };
+        obstacles.push(obstacle);
+      }
+    }
+
+    function generateTarget() {
+      targetX = Math.random() * (canvas.width - targetSize);
+      targetY = Math.random() * (canvas.height - targetSize);
+    }
+
+    function handleKeyPress(event) {
+      switch (event.key) {
+        case 'ArrowUp':
+        case 'w':
+          movingDirection = { x: 0, y: -1 };
+          break;
+        case 'ArrowDown':
+        case 's':
+          movingDirection = { x: 0, y: 1 };
+          break;
+        case 'ArrowLeft':
+        case 'a':
+          movingDirection = { x: -1, y: 0 };
+          break;
+        case 'ArrowRight':
+        case 'd':
+          movingDirection = { x: 1, y: 0 };
+          break;
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('roundCounter').innerText = `Round: ${roundCounter} | Score: ${score} |  Lost: ${deathCounter} | Red Blocks: ${numObstacles}`;
+    }
+
+    function checkCollision() {
+      for (const obstacle of obstacles) {
+        if (
+          playerX < obstacle.x + obstacle.width &&
+          playerX + playerSize > obstacle.x &&
+          playerY < obstacle.y + obstacle.height &&
+          playerY + playerSize > obstacle.y
+        ) {
+          // Collision with obstacle, reset player position and subtract 2 points
+          playerX = 50;
+          playerY = 50;
+          score -= 2;
+          deathCounter++;
+          updateStats();
+          numObstacles = numObstacles + 1;
+        }
+      }
+
+      if (
+        playerX < targetX + targetSize &&
+        playerX + playerSize > targetX &&
+        playerY < targetY + targetSize &&
+        playerY + playerSize > targetY
+      ) {
+        // Reached the target, generate new target, Obstacles and add 10 points
+        generateTarget();
+        score += 10;
+        roundCounter++;
+        
+        numObstacles = numObstacles + 2;
+        obstacles = [];
+        generateObstacles();
+        updateStats();
+      }
+    }
+
+    function updateBackground() {
+      // Set background image randomly from a folder of images
+      const backgroundImages = ['paper-3204064_1920.jpg', 'cubes-677092_1920.png', 'brick-1397278_1920.jpg', 'abstract-1900211_1920.png']; // Add more image filenames as needed
+      const randomImage = backgroundImages[Math.floor(Math.random() * backgroundImages.length)];
+      document.body.style.backgroundImage = `url('${randomImage}')`;
+    }
+    
+    let oldRound = 1;
+
+    function update() {
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Move player based on the chosen direction
+      playerX += movingDirection.x * 2;
+      playerY += movingDirection.y * 2;
+
+      // Draw player
+      ctx.fillStyle = 'blue';
+      ctx.fillRect(playerX, playerY, playerSize, playerSize);
+
+      // Draw obstacles
+      ctx.fillStyle = 'red';
+      for (const obstacle of obstacles) {
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      }
+
+      // Draw target
+      ctx.fillStyle = 'green';
+      ctx.fillRect(targetX, targetY, targetSize, targetSize);
+
+      checkCollision();
+
+      requestAnimationFrame(update);
+    }
+
+    window.addEventListener('resize', init);
+    init();
+  </script>
+</body>
+</html>
